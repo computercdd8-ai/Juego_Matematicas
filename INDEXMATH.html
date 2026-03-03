@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Juego Mejorado: Orden de Operaciones</title>
+<link rel="icon" href="img/icono_juego.png" type="image/png">
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        text-align: center;
+        margin: 0;
+        padding: 0;
+        color: #fff;
+        background-image: url('ChatGPT Image Mar 3, 2026 11_12_32 AM.png');
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+    }
+
+    h1 {
+        margin-top: 20px;
+        color: #fffa;
+        text-shadow: 2px 2px 5px #333;
+    }
+
+    .container {
+        background: rgba(0,0,0,0.6);
+        color: #fff;
+        max-width: 700px;
+        margin: 20px auto;
+        padding: 25px;
+        border-radius: 20px;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+        border: 2px solid #fff;
+    }
+
+    label, select {
+        font-size: 18px;
+        margin-bottom: 15px;
+    }
+
+    .equation {
+        font-size: 30px;
+        margin: 20px 0;
+        font-weight: bold;
+        color: #ffeb3b;
+        text-shadow: 2px 2px 5px #000;
+    }
+
+    input {
+        padding: 12px;
+        font-size: 20px;
+        width: 140px;
+        text-align: center;
+        border-radius: 10px;
+        border: 2px solid #ffeb3b;
+        background: rgba(255,255,255,0.9);
+        color: #333;
+        font-weight: bold;
+    }
+
+    button {
+        padding: 12px 25px;
+        font-size: 18px;
+        border: none;
+        border-radius: 12px;
+        cursor: pointer;
+        margin: 10px;
+        font-weight: bold;
+        transition: 0.3s;
+    }
+
+    button#responder { background: #4caf50; color: #fff; }
+    button#responder:hover { background: #388e3c; }
+    button#nueva { background: #f57c00; color: #fff; }
+    button#nueva:hover { background: #e65100; }
+
+    .scoreboard {
+        display: flex;
+        justify-content: space-around;
+        margin-top: 25px;
+        font-size: 20px;
+        font-weight: bold;
+    }
+
+    .turn {
+        font-size: 22px;
+        margin-top: 10px;
+        font-weight: bold;
+        color: #03a9f4;
+        text-shadow: 1px 1px 3px #000;
+    }
+
+    .message {
+        margin-top: 15px;
+        font-size: 20px;
+        min-height: 28px;
+        font-weight: bold;
+    }
+
+    .timer {
+        font-size: 20px;
+        font-weight: bold;
+        margin-top: 10px;
+        color: #ff5252;
+    }
+</style>
+</head>
+<body>
+
+<h1>🎮 Juego Mejorado: Orden de Operaciones</h1>
+
+<div class="container">
+
+    <div class="turn" id="turno">Turno: Equipo 1</div>
+    <div class="timer" id="timer">Tiempo: 10s</div>
+
+    <label for="operation">Selecciona tipo de operación:</label>
+    <select id="operation">
+        <option value="all">Todas</option>
+        <option value="suma">Suma</option>
+        <option value="resta">Resta</option>
+        <option value="multiplicacion">Multiplicación</option>
+        <option value="division">División</option>
+        <option value="mixto">Mixto</option>
+        <option value="algebra">Álgebra</option>
+    </select>
+
+    <div class="equation" id="equation">Presiona "Nueva pregunta"</div>
+
+    <input type="number" id="answer" placeholder="Respuesta">
+
+    <br>
+    <button id="responder" onclick="checkAnswer()">Responder</button>
+    <button id="nueva" onclick="newQuestion()">Nueva pregunta</button>
+
+    <div class="message" id="message"></div>
+
+    <div class="scoreboard">
+        <div>Equipo 1: <span id="score1">0</span></div>
+        <div>Equipo 2: <span id="score2">0</span></div>
+    </div>
+
+</div>
+
+<!-- Sonidos -->
+<audio id="correctSound">
+    <source src="https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg" type="audio/ogg">
+</audio>
+<audio id="wrongSound">
+    <source src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg" type="audio/ogg">
+</audio>
+
+<script>
+let score1 = 0;
+let score2 = 0;
+let currentTeam = 1;
+let correctAnswer = 0;
+let timer;
+let timeLeft = 10;
+
+function generateExpression(){
+    let a = Math.floor(Math.random()*10)+1;
+    let b = Math.floor(Math.random()*10)+1;
+    let c = Math.floor(Math.random()*10)+1;
+    let d = Math.floor(Math.random()*5)+1;
+
+    let operation = document.getElementById("operation").value;
+    let expressions = [];
+
+    if(operation === "suma"){
+        expressions = [`${a} + ${b}`, `${b} + ${c}`, `${a} + ${c}`];
+    } else if(operation === "resta"){
+        expressions = [`${a} - ${b}`, `${c} - ${a}`, `${b} - ${c}`];
+    } else if(operation === "multiplicacion"){
+        expressions = [`${a} * ${b}`, `${b} * ${c}`, `${a} * ${c}`];
+    } else if(operation === "division"){
+        let dividend = a*b; // para división exacta
+        expressions = [`${dividend} / ${b}`, `${b*c} / ${c}`, `${a*c} / ${c}`];
+    } else if(operation === "mixto"){
+        expressions = [
+            `(${a} + ${b}) * ${c}`,
+            `${a} + ${b} * ${c}`,
+            `${a} * ${b} - ${c}`,
+            `${a} + (${b} * ${c}) - ${d}`,
+            `(${a} + ${b}) * (${c} - ${d})`
+        ];
+    } else if(operation === "algebra"){
+        // Generamos ecuaciones tipo x + b = c
+        let x = Math.floor(Math.random()*10)+1;
+        let sum = x + b;
+        expressions = [`x + ${b} = ${sum}`, `${x} - ${b} = ${x-b}`];
+        let eq = expressions[Math.floor(Math.random()*expressions.length)];
+        if(eq.includes('+')) correctAnswer = sum - b;
+        else correctAnswer = (x-b) + b;
+        document.getElementById("equation").textContent = eq;
+        return;
+    } else { // all
+        expressions = [
+            `${a} + ${b}`, `${a} - ${b}`, `${a} * ${b}`, `${a*b} / ${b}`,
+            `(${a} + ${b}) * ${c}`, `${a} + (${b} * ${c}) - ${d}`
+        ];
+    }
+
+    let exp = expressions[Math.floor(Math.random()*expressions.length)];
+    correctAnswer = eval(exp);
+    document.getElementById("equation").textContent = exp;
+}
+
+function startTimer(){
+    timeLeft = 10;
+    document.getElementById("timer").textContent = `Tiempo: ${timeLeft}s`;
+    clearInterval(timer);
+    timer = setInterval(() => {
+        timeLeft--;
+        document.getElementById("timer").textContent = `Tiempo: ${timeLeft}s`;
+        if(timeLeft <= 0){
+            clearInterval(timer);
+            document.getElementById("message").textContent = `⏰ Se acabó el tiempo! La respuesta era ${correctAnswer}`;
+            document.getElementById("message").style.color = '#ff5252';
+            switchTurn();
+            setTimeout(newQuestion, 1500);
+        }
+    }, 1000);
+}
+
+function newQuestion(){
+    document.getElementById("answer").value = "";
+    document.getElementById("message").textContent = "";
+    document.getElementById("message").style.color = '#fff';
+    generateExpression();
+    startTimer();
+}
+
+function switchTurn(){
+    currentTeam = currentTeam === 1 ? 2 : 1;
+    document.getElementById("turno").textContent = "Turno: Equipo " + currentTeam;
+}
+
+function checkAnswer(){
+    clearInterval(timer);
+    let userAnswer = Number(document.getElementById("answer").value);
+    let message = document.getElementById("message");
+
+    if(userAnswer === correctAnswer){
+        message.textContent = "✅ Correcto!";
+        message.style.color = '#4caf50';
+        document.getElementById("correctSound").play();
+        if(currentTeam === 1){
+            score1++;
+            document.getElementById("score1").textContent = score1;
+        } else {
+            score2++;
+            document.getElementById("score2").textContent = score2;
+        }
+    } else {
+        message.textContent = `❌ Incorrecto. La respuesta era ${correctAnswer}`;
+        message.style.color = '#ff5252';
+        document.getElementById("wrongSound").play();
+    }
+
+    switchTurn();
+    setTimeout(newQuestion, 1500);
+}
+</script>
+
+</body>
+</html>
